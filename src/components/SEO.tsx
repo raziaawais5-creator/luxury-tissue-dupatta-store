@@ -10,7 +10,7 @@ export const SEO: React.FC = () => {
     const origin =
       typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
         ? window.location.origin
-        : 'https://zaib-than-collection.vercel.app';
+        : 'https://luxury-tissue-dupatta-store.vercel.app';
 
     // Active product if on product detail page
     const currentProduct = selectedProductId ? products.find((p) => p.id === selectedProductId) : null;

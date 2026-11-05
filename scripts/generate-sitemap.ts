@@ -13,7 +13,7 @@ const rawDomain =
   process.env.VITE_SITE_URL ||
   process.env.SITE_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-  'https://zaib-than-collection.vercel.app';
+  'https://luxury-tissue-dupatta-store.vercel.app';
 
 // Ensure proper protocol and strip trailing slash
 const domain = (

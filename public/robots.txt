@@ -1,5 +1,5 @@
 # Robots.txt for Zaib Than Collection
-# Production Domain: https://zaib-than-collection.vercel.app
+# Production Domain: https://luxury-tissue-dupatta-store.vercel.app
 
 User-agent: *
 Allow: /
@@ -27,4 +27,4 @@ Disallow: /wishlist
 Crawl-delay: 1
 
 # XML Sitemap Location for Google Search Console & Bing Webmaster Tools
-Sitemap: https://zaib-than-collection.vercel.app/sitemap.xml
+Sitemap: https://luxury-tissue-dupatta-store.vercel.app/sitemap.xml
