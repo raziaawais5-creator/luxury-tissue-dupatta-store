@@ -24,6 +24,7 @@ import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 import { AccountPage } from './pages/AccountPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { PoliciesPage } from './pages/PoliciesPage';
+import { SEO } from './components/SEO';
 
 const AppContent: React.FC = () => {
   const { currentPage, toastMessage } = useStore();
@@ -66,6 +67,9 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#2C2420]">
+      {/* Dynamic SEO Meta, OpenGraph, Canonical & Schema.org Structured Data */}
+      <SEO />
+
       {/* Primary Top Bar */}
       <Header />
 

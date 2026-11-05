@@ -1,0 +1,30 @@
+# Robots.txt for Zaib Than Collection
+# Production Domain: https://zaib-than-collection.vercel.app
+
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /collections
+Allow: /collections/*
+Allow: /products/*
+Allow: /custom-designer
+Allow: /story
+Allow: /craftsmanship
+Allow: /contact
+Allow: /policies
+
+# Disallow private user account, checkout, and admin routes
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-confirmation
+Disallow: /account
+Disallow: /orders
+Disallow: /wishlist
+
+# Crawl delay
+Crawl-delay: 1
+
+# XML Sitemap Location for Google Search Console & Bing Webmaster Tools
+Sitemap: https://zaib-than-collection.vercel.app/sitemap.xml

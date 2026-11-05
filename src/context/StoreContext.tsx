@@ -165,10 +165,74 @@ const SEED_CUSTOM_REQUESTS: CustomDupattaRequest[] = [
   },
 ];
 
+const parseRouteFromLocation = (): {
+  page: string;
+  productId: string | null;
+  categoryFilter: string | null;
+} => {
+  if (typeof window === 'undefined') {
+    return { page: 'home', productId: null, categoryFilter: null };
+  }
+
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+
+  if (path === '/' || path === '') {
+    return { page: 'home', productId: null, categoryFilter: null };
+  }
+  if (path === '/shop') {
+    return { page: 'shop', productId: null, categoryFilter: null };
+  }
+  if (path.startsWith('/products/')) {
+    const slugOrId = path.replace('/products/', '');
+    const found = PRODUCTS.find((p) => p.slug === slugOrId || p.id === slugOrId);
+    if (found) {
+      return { page: 'product-detail', productId: found.id, categoryFilter: null };
+    }
+    return { page: 'shop', productId: null, categoryFilter: null };
+  }
+  if (path === '/collections') {
+    return { page: 'collections', productId: null, categoryFilter: null };
+  }
+  if (path.startsWith('/collections/')) {
+    const catId = path.replace('/collections/', '');
+    return { page: 'shop', productId: null, categoryFilter: catId };
+  }
+  if (path === '/custom-designer') {
+    return { page: 'custom-designer', productId: null, categoryFilter: null };
+  }
+  if (path === '/story') {
+    return { page: 'story', productId: null, categoryFilter: null };
+  }
+  if (path === '/craftsmanship') {
+    return { page: 'craftsmanship', productId: null, categoryFilter: null };
+  }
+  if (path === '/contact') {
+    return { page: 'contact', productId: null, categoryFilter: null };
+  }
+  if (path === '/policies') {
+    return { page: 'policies', productId: null, categoryFilter: null };
+  }
+  if (path === '/admin') {
+    return { page: 'admin', productId: null, categoryFilter: null };
+  }
+  if (path === '/cart') {
+    return { page: 'cart', productId: null, categoryFilter: null };
+  }
+  if (path === '/checkout') {
+    return { page: 'checkout', productId: null, categoryFilter: null };
+  }
+  if (path === '/account' || path === '/orders' || path === '/wishlist') {
+    return { page: 'account', productId: null, categoryFilter: null };
+  }
+
+  return { page: 'home', productId: null, categoryFilter: null };
+};
+
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentPage, setCurrentPage] = useState<string>('home');
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
+  const initialRoute = parseRouteFromLocation();
+  const [currentPage, setCurrentPage] = useState<string>(initialRoute.page);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(initialRoute.productId);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(initialRoute.categoryFilter);
   const [activePolicyTab, setActivePolicyTab] = useState<string>('shipping');
 
   const [products, setProducts] = useState<DupattaProduct[]>(() => {
@@ -273,6 +337,64 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage, selectedProductId]);
+
+  // Synchronize state with browser URL
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let targetPath = '/';
+    if (currentPage === 'home') {
+      targetPath = '/';
+    } else if (currentPage === 'shop') {
+      targetPath = selectedCategoryFilter ? `/collections/${selectedCategoryFilter}` : '/shop';
+    } else if (currentPage === 'product-detail') {
+      const prod = selectedProductId ? products.find((p) => p.id === selectedProductId) : null;
+      targetPath = prod ? `/products/${prod.slug}` : '/shop';
+    } else if (currentPage === 'collections') {
+      targetPath = '/collections';
+    } else if (currentPage === 'custom-designer') {
+      targetPath = '/custom-designer';
+    } else if (currentPage === 'story') {
+      targetPath = '/story';
+    } else if (currentPage === 'craftsmanship') {
+      targetPath = '/craftsmanship';
+    } else if (currentPage === 'contact') {
+      targetPath = '/contact';
+    } else if (currentPage === 'policies') {
+      targetPath = '/policies';
+    } else if (currentPage === 'admin') {
+      targetPath = '/admin';
+    } else if (currentPage === 'cart') {
+      targetPath = '/cart';
+    } else if (currentPage === 'checkout') {
+      targetPath = '/checkout';
+    } else if (currentPage === 'order-confirmation') {
+      targetPath = '/order-confirmation';
+    } else if (currentPage === 'account' || currentPage === 'orders' || currentPage === 'wishlist') {
+      targetPath = '/account';
+    }
+
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(
+        { page: currentPage, selectedProductId, selectedCategoryFilter },
+        '',
+        targetPath
+      );
+    }
+  }, [currentPage, selectedProductId, selectedCategoryFilter, products]);
+
+  // Handle browser back and forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseRouteFromLocation();
+      setCurrentPage(parsed.page);
+      setSelectedProductId(parsed.productId);
+      setSelectedCategoryFilter(parsed.categoryFilter);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
