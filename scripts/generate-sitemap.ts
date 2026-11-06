@@ -8,18 +8,24 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const publicDir = path.resolve(rootDir, 'public');
 
-// Resolve production domain
-const rawDomain =
-  process.env.VITE_SITE_URL ||
-  process.env.SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-  'https://luxury-tissue-dupatta-store.vercel.app';
+// Strict Canonical Production Base URL
+const OFFICIAL_PRODUCTION_URL = 'https://luxury-tissue-dupatta-store.vercel.app';
 
-// Ensure proper protocol and strip trailing slash
-const domain = (
-  rawDomain.startsWith('http') ? rawDomain : `https://${rawDomain}`
-).replace(/\/+$/, '');
+// Resolve domain: Prioritize official production domain.
+// Only use VITE_SITE_URL / SITE_URL if explicitly defined AND not a temporary preview deployment URL.
+function resolveCanonicalDomain(): string {
+  const envUrl = process.env.VITE_SITE_URL || process.env.SITE_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+    const trimmed = envUrl.trim();
+    // Ignore internal ephemeral preview URLs with hash IDs
+    if (!trimmed.includes('-mqpz') && !trimmed.includes('.run.app') && !trimmed.includes('-git-')) {
+      return (trimmed.startsWith('http') ? trimmed : `https://${trimmed}`).replace(/\/+$/, '');
+    }
+  }
+  return OFFICIAL_PRODUCTION_URL;
+}
 
+const domain = resolveCanonicalDomain();
 const today = new Date().toISOString().split('T')[0];
 
 interface SitemapUrl {
@@ -27,11 +33,27 @@ interface SitemapUrl {
   lastmod: string;
   changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
   priority: string;
-  images?: Array<{
-    loc: string;
-    title: string;
-    caption?: string;
-  }>;
+  images?: string[];
+}
+
+// Clean and deduplicate image URLs; filter out any undefined/null/empty values
+function sanitizeImages(rawImageUrls: Array<string | undefined | null>): string[] {
+  const cleaned: string[] = [];
+  const seen = new Set<string>();
+
+  for (const img of rawImageUrls) {
+    if (!img || typeof img !== 'string') continue;
+    const trimmed = img.trim();
+    if (trimmed === '' || trimmed.includes('undefined') || trimmed.includes('null')) continue;
+
+    const fullUrl = trimmed.startsWith('http') ? trimmed : `${domain}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    if (!seen.has(fullUrl)) {
+      seen.add(fullUrl);
+      cleaned.push(fullUrl);
+    }
+  }
+
+  return cleaned;
 }
 
 const urls: SitemapUrl[] = [
@@ -41,13 +63,9 @@ const urls: SitemapUrl[] = [
     lastmod: today,
     changefreq: 'daily',
     priority: '1.0',
-    images: [
-      {
-        loc: `${domain}/assets/aistudio/Elegant_Embroidered_Dupatta_Portrait_24f2dee4.png`,
-        title: 'Zaib Than Collection - Luxury Hand-Painted Tissue Dupattas',
-        caption: 'Signature ivory tissue dupatta with hand-painted roses, freshwater pearls, and golden sitara',
-      },
-    ],
+    images: sanitizeImages([
+      '/assets/aistudio/Elegant_Embroidered_Dupatta_Portrait_24f2dee4.png',
+    ]),
   },
   {
     loc: `${domain}/shop`,
@@ -62,44 +80,24 @@ const urls: SitemapUrl[] = [
     priority: '0.8',
   },
 
-  // 2. Curated Collection Category Routes
+  // 2. Curated Collection Category Routes (8 Collections)
   ...FEATURED_COLLECTIONS_DATA.map((col): SitemapUrl => ({
     loc: `${domain}/collections/${col.id}`,
     lastmod: today,
     changefreq: 'weekly',
     priority: '0.8',
-    images: [
-      {
-        loc: `${domain}${col.image}`,
-        title: `${col.title} | Zaib Than Collection`,
-        caption: col.subtitle,
-      },
-    ],
+    images: sanitizeImages([col.image]),
   })),
 
-  // 3. Dynamic Product Routes (with Google Image Sitemap extensions)
+  // 3. Dynamic Product Routes (6 Products with deduplicated, valid images)
   ...PRODUCTS.map((prod): SitemapUrl => {
-    const images = [
-      {
-        loc: `${domain}${prod.images.primary}`,
-        title: `${prod.name} - Hand-Painted Tissue Dupatta`,
-        caption: prod.tagline,
-      },
-      {
-        loc: `${domain}${prod.images.modelWearing}`,
-        title: `${prod.name} - Model Drape View`,
-        caption: `Pakistani luxury fashion shoot wearing ${prod.name}`,
-      },
-      {
-        loc: `${domain}${prod.images.floralCloseUp}`,
-        title: `${prod.name} - Hand-Painted Floral Artistry Close-Up`,
-        caption: `Artisanal brush strokes and fine pigment work on metallic tissue`,
-      },
-      {
-        loc: `${domain}${prod.images.borderDetail}`,
-        title: `${prod.name} - Embellished Border & Kiran Detail`,
-        caption: prod.borderStyle,
-      },
+    const rawImages = [
+      prod.images.primary,
+      prod.images.modelWearing,
+      prod.images.floralCloseUp,
+      prod.images.borderDetail,
+      prod.images.macroSitaraMoti,
+      prod.images.transparencyDrape,
     ];
 
     return {
@@ -107,7 +105,7 @@ const urls: SitemapUrl[] = [
       lastmod: today,
       changefreq: 'weekly',
       priority: '0.9',
-      images,
+      images: sanitizeImages(rawImages),
     };
   }),
 
@@ -117,13 +115,9 @@ const urls: SitemapUrl[] = [
     lastmod: today,
     changefreq: 'monthly',
     priority: '0.8',
-    images: [
-      {
-        loc: `${domain}/assets/aistudio/9b6b89f0-ad30-4a2a-b536-a50d80f1b78e_94496726.jpeg`,
-        title: 'Bespoke Custom Dupatta Studio',
-        caption: 'Customize fabric, dye hues, floral paintings, sitara, and pearl density',
-      },
-    ],
+    images: sanitizeImages([
+      '/assets/aistudio/9b6b89f0-ad30-4a2a-b536-a50d80f1b78e_94496726.jpeg',
+    ]),
   },
   {
     loc: `${domain}/story`,
@@ -136,13 +130,9 @@ const urls: SitemapUrl[] = [
     lastmod: today,
     changefreq: 'monthly',
     priority: '0.7',
-    images: [
-      {
-        loc: `${domain}/assets/aistudio/638cc19f-7425-4c05-9527-dff561da788a_1c233d70.jpeg`,
-        title: 'Master Artisans at Work - Sitara & Needlework',
-        caption: 'Traditional handcrafting techniques of Pakistani heirloom dupattas',
-      },
-    ],
+    images: sanitizeImages([
+      '/assets/aistudio/638cc19f-7425-4c05-9527-dff561da788a_1c233d70.jpeg',
+    ]),
   },
   {
     loc: `${domain}/contact`,
@@ -168,7 +158,7 @@ function xmlEscape(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
-// Generate valid XML string
+// Generate valid XML conforming to Google's official sitemap specification
 const xmlLines: string[] = [
   '<?xml version="1.0" encoding="UTF-8"?>',
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
@@ -183,13 +173,9 @@ for (const u of urls) {
   xmlLines.push(`    <priority>${u.priority}</priority>`);
 
   if (u.images && u.images.length > 0) {
-    for (const img of u.images) {
+    for (const imgUrl of u.images) {
       xmlLines.push('    <image:image>');
-      xmlLines.push(`      <image:loc>${xmlEscape(img.loc)}</image:loc>`);
-      xmlLines.push(`      <image:title>${xmlEscape(img.title)}</image:title>`);
-      if (img.caption) {
-        xmlLines.push(`      <image:caption>${xmlEscape(img.caption)}</image:caption>`);
-      }
+      xmlLines.push(`      <image:loc>${xmlEscape(imgUrl)}</image:loc>`);
       xmlLines.push('    </image:image>');
     }
   }
@@ -203,11 +189,11 @@ xmlLines.push('');
 const sitemapContent = xmlLines.join('\n');
 const sitemapPath = path.resolve(publicDir, 'sitemap.xml');
 fs.writeFileSync(sitemapPath, sitemapContent, 'utf-8');
-console.log(`[SEO] sitemap.xml successfully written to ${sitemapPath} (${urls.length} public URLs indexed for domain: ${domain})`);
+console.log(`[SEO] sitemap.xml successfully written to ${sitemapPath} (${urls.length} URLs for canonical domain: ${domain})`);
 
-// Also synchronize public/robots.txt with the canonical Sitemap directive
+// Synchronize public/robots.txt with canonical sitemap URL
 const robotsContent = `# Robots.txt for Zaib Than Collection
-# Production Domain: ${domain}
+# Official Production Domain: ${domain}
 
 User-agent: *
 Allow: /
@@ -221,7 +207,7 @@ Allow: /craftsmanship
 Allow: /contact
 Allow: /policies
 
-# Disallow private user account, checkout, and admin routes
+# Disallow private user flows, checkout, and admin routes
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /cart

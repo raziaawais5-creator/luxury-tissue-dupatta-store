@@ -7,10 +7,19 @@ export const SEO: React.FC = () => {
 
   useEffect(() => {
     // Resolve dynamic origin
+    const CANONICAL_PRODUCTION_URL = 'https://luxury-tissue-dupatta-store.vercel.app';
+    const isPreviewUrl =
+      typeof window !== 'undefined' &&
+      (window.location.origin.includes('localhost') ||
+        window.location.origin.includes('.run.app') ||
+        window.location.origin.includes('-git-') ||
+        window.location.origin.includes('-mqpz') ||
+        /luxury-tissue-dupatta-store-.*\.vercel\.app/.test(window.location.origin));
+
     const origin =
-      typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
+      typeof window !== 'undefined' && !isPreviewUrl && window.location.origin
         ? window.location.origin
-        : 'https://luxury-tissue-dupatta-store.vercel.app';
+        : CANONICAL_PRODUCTION_URL;
 
     // Active product if on product detail page
     const currentProduct = selectedProductId ? products.find((p) => p.id === selectedProductId) : null;
